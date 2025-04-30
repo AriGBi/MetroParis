@@ -27,11 +27,39 @@ class Model:
         # toc = datetime.now()
         # print("Tempo modo 2:", toc - tic)
 
-        self._grafo.clear_edges()
+
         tic = datetime.now()
         self.addEdges3()
         toc = datetime.now()
         print("Tempo modo 3:", toc - tic)
+
+    def buildGraphPesato(self):
+        self._grafo.clear()
+        self._grafo.add_nodes_from(self._fermate)
+        self.addEdgesPesati()
+
+    def addEdgesPesati(self):
+        allEdges = DAO.getAllEdges()
+        for edge in allEdges:
+            u = self._idMapFermate[edge.id_stazP]
+            v = self._idMapFermate[edge.id_stazA]
+            if self._grafo.has_edge(u, v): #se il grafo ha già un arco tra u e v, modifico il suo peso
+                self._grafo[u][v]["weight"] += 1
+            else: #se l'arco non c'era già, devo crearlo
+                self._grafo.add_edge(u, v, weight=1)
+
+    def addEdgesPesatiV2(self):
+        allEdgesPesati= DAO.getAllEdgesPesati()
+        for e in allEdgesPesati:
+            self._grafo.add_edge(self._idMapFermate[e[0]],self._idMapFermate[e[1]],weight=e[2])
+
+    def getArchiPesoMaggiore(self):
+        edges= self._grafo.edges(data=True) #data=True per prendere anche i pesi
+        res=[]
+        for e in edges:
+            if self._grafo.get_edge_data(e[0],e[1])["weight"]>1:
+                res.append(e)
+        return res
 
     def addEdges1(self):
         """Aggiungo gli archi ciclando con doppio ciclo sui nodi e testando se per ogni coppia esiste una connessione"""
@@ -55,7 +83,34 @@ class Model:
         for edge in allEdges:
             u= self._idMapFermate[edge.id_stazP]
             v= self._idMapFermate[edge.id_stazA]
-            self._grafo.add_edge(u,v)
+            self._grafo.add_edge(u,v) #add_edge non aggiunge un arco se è già presente!! Noi in realtà abbiamo delle fermate collegate da piu linee
+
+    def getBFSNodesFromTree(self, source):
+        """Cerco l'albero di visita che viene fuori con BFS. L'utente mi dice da dove partire, selezionando la stazione"""
+        tree=nx.bfs_tree(self._grafo, source) #questo metodo calcola l'albero del grafo a partire dal nodo source
+        #tree è comunque un GRAFO che avrà archi e nodi
+        archi = list(tree.edges())
+        nodi= list(tree.nodes())
+        return nodi[1:] #tolgo il nodo da cui parto
+
+    def getDFSNodesFromTree(self, source):
+        tree=nx.dfs_tree(self._grafo, source)
+        nodi= list(tree.nodes())
+        return nodi[1:]
+
+    def getBFSNodesFromEdges(self, source):
+        archi= nx.bfs_edges(self._grafo, source) #archi di VISITA --> tuple coppie di nodi
+        res=[]
+        for u,v in archi: #(u,v)
+            res.append(v) #prendo solo i nodi di arrivo dei vari archi
+        return res
+
+    def getDFSNodesFromEdges(self, source):
+        tree=nx.dfs_edges(self._grafo, source)
+        res=[]
+        for u,v in tree:
+            res.append(v)
+        return res
 
 
 

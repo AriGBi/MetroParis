@@ -14,10 +14,25 @@ class Controller:
         self._view.lst_result.controls.append(ft.Text("Grafo correttamente creato"))
         self._view.lst_result.controls.append(ft.Text(f"Il grafo contiene {self._model.getNumNodi()} nodi"))
         self._view.lst_result.controls.append(ft.Text(f"Il grafo contiene {self._model.getNumArchi()} archi"))
+        self._view._btnCalcola.disabled = False #una volta creato il grafo, ABILITO il bottone per poter cercare i cammini possibili
         self._view.update_page()
 
     def handleCercaRaggiungibili(self,e):
-        pass
+        if self._fermataPartenza is None: #la partenza deve essere la Fermata selezionata dall'utente
+            self._view.lst_result.controls.clear()
+            self._view.lst_result.controls.append(ft.Text("Attenzione, stazione di partenza non selezionata", color='red'))
+            self._view.update_page()
+            return
+
+        nodes=self._model.getBFSNodesFromEdges(self._fermataPartenza)
+        self._view.lst_result.controls.clear()
+        self._view.lst_result.controls.append(ft.Text(f"Di seguito le stazioni raggiungibili a partire da {self._fermataPartenza}"))
+        for n in nodes:
+            self._view.lst_result.controls.append(ft.Text(f"{n}"))
+        self._view.update_page()
+
+
+
 
     def loadFermate(self, dd: ft.Dropdown()):
         fermate = self._model.fermate
