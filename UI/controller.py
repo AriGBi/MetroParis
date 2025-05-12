@@ -9,12 +9,13 @@ class Controller:
         self._model = model
 
     def handleCreaGrafo(self,e):
-        self._model.buildGraph()
+        self._model.buildGraphPesato()
         self._view.lst_result.controls.clear()
         self._view.lst_result.controls.append(ft.Text("Grafo correttamente creato"))
         self._view.lst_result.controls.append(ft.Text(f"Il grafo contiene {self._model.getNumNodi()} nodi"))
         self._view.lst_result.controls.append(ft.Text(f"Il grafo contiene {self._model.getNumArchi()} archi"))
         self._view._btnCalcola.disabled = False #una volta creato il grafo, ABILITO il bottone per poter cercare i cammini possibili
+        self._view._btnCercaPercorso.disabled = False
         self._view.update_page()
 
     def handleCercaRaggiungibili(self,e):
@@ -31,6 +32,25 @@ class Controller:
             self._view.lst_result.controls.append(ft.Text(f"{n}"))
         self._view.update_page()
 
+    def handleCercaPercorso(self,e):
+        """Recupero le fermate scelte dai dropodwon" e poi chiamo metodo del modello ShortestPath"""
+        if self._fermataPartenza is None or self._fermataArrivo is None: #utente non ha scelto
+            self._view.lst_result.controls.clear()
+            self._view.lst_result.controls.append(ft.Text("Attenzione, selezionare fermate di partenza e di arrivo", color='red'))
+            self._view.update_page()
+            return
+        totTime,path=self._model.getShortestPath(self._fermataPartenza,self._fermataArrivo)
+        #può succedere che path sia empty se per esempio ho un grafo non connesso
+        if path==[]:
+            self._view.lst_result.controls.clear()
+            self._view.lst_result.controls.append(ft.Text(f"Non ho trovato nessun cammino fra {self._fermataPartenza} e {self._fermataArrivo} ", color='red'))
+            self._view.update_page()
+            return
+        self._view.lst_result.controls.clear()
+        self._view.lst_result.controls.append(ft.Text(f"Ho trovato un cammino fra {self._fermataPartenza} e {self._fermataArrivo}  che impiega {totTime} minuti."))
+        for n in path:
+            self._view.lst_result.controls.append(ft.Text(f"{n}",color='green'))
+        self._view.update_page()
 
 
 

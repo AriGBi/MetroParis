@@ -3,6 +3,8 @@ from datetime import datetime
 from database.DAO import DAO
 import networkx as nx
 
+import geopy.distance
+
 class Model:
     def __init__(self):
         self._fermate = DAO.getAllFermate() #questo metodo resituisce un elenco di tutte le fermate
@@ -10,6 +12,9 @@ class Model:
         self._idMapFermate={} #dizionario in cui metto come chiave l'id della fermata e valore l'oggetto fermata
         for f in self._fermate:
             self._idMapFermate[f.id_fermata] = f
+
+    def getShortestPath(self,u,v): #gli passo il nodo di partenza e il nodo di arrivo SCELTO DALL'UTENTE
+        return nx.single_source_dijkstra(self._grafo,u,v) #implemento dijikstra per trovare cammino minimo --> restituisce la distanza minima e anche il cammino minimi
 
 
     def buildGraph(self):
@@ -36,7 +41,20 @@ class Model:
     def buildGraphPesato(self):
         self._grafo.clear()
         self._grafo.add_nodes_from(self._fermate)
-        self.addEdgesPesati()
+        self.addEdgesPesatiTempi()
+
+
+    def addEdgesPesatiTempi(self):
+        """Aggiunge archi con peso uguale al tempo di percorrenza dell'arco"""
+        self._grafo.clear_edges()
+        allEdges=DAO.getAllEdgesVelocita()
+        for e in allEdges:
+            u=self._idMapFermate[e[0]] #recupero l'oggetto Fermata dalla mappa. In e[0] ho l'id della fermata di partenza
+            v=self._idMapFermate[e[1]] #Fermata di arrivo
+            peso=getTraversalTime(u,v,e[2]) #gli passo gli oggetti nodi perchè hanno le coordinate e poi passo e[2] che è la velocità
+            self._grafo.add_edge(u,v,weight=peso)
+
+
 
     def addEdgesPesati(self):
         allEdges = DAO.getAllEdges()
@@ -48,10 +66,12 @@ class Model:
             else: #se l'arco non c'era già, devo crearlo
                 self._grafo.add_edge(u, v, weight=1)
 
+
     def addEdgesPesatiV2(self):
         allEdgesPesati= DAO.getAllEdgesPesati()
         for e in allEdgesPesati:
             self._grafo.add_edge(self._idMapFermate[e[0]],self._idMapFermate[e[1]],weight=e[2])
+
 
     def getArchiPesoMaggiore(self):
         edges= self._grafo.edges(data=True) #data=True per prendere anche i pesi
@@ -113,7 +133,6 @@ class Model:
         return res
 
 
-
     @property
     def fermate(self):
         return self._fermate
@@ -123,3 +142,9 @@ class Model:
 
     def getNumArchi(self):
         return len(self._grafo.edges)
+
+
+def getTraversalTime(u, v, vel): #metodo NON della classe Model, ma metodo a parte
+    dist=geopy.distance.distance((u.coordX,u.coordY),(v.coordX, v.coordY)).km #libreria che permette di calcolare la distanza geometrica tra due punti. Devo passare due tuple --> latitudine e longitudine dei due punti
+    time=dist/vel *60 #in minuti
+    return time

@@ -3,8 +3,8 @@ from model.model import Model
 
 model=Model()
 model.buildGraphPesato()
-# print("Num nodi: ", model.getNumNodi())
-# print("Num archi: ", model.getNumArchi())
+print("Num nodi: ", model.getNumNodi())
+print("Num archi: ", model.getNumArchi())
 f=Fermata(2, "Abbesses", 23.385, 48.8843)
 # nodesBFS=model.getBFSNodesFromEdges(f)
 # for n in nodesBFS:
